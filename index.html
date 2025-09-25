@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat para iOS 9 - Gemini/DeepSeek</title>
+    <style>
+        /* CSS compatible con iOS 9 Safari - VERSIÓN SIMPLIFICADA */
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin: 0;
+        }
+        
+        .chat-container {
+            background-color: white;
+            border-radius: 10px;
+            height: 70vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            background-color: #007AFF;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        
+        .user-message {
+            background-color: #007AFF;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .bot-message {
+            background-color: #E8E8E8;
+            color: black;
+            margin-right: auto;
+        }
+        
+        .chat-input-container {
+            padding: 15px;
+            display: flex;
+        }
+        
+        #message-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 16px;
+        }
+        
+        #send-button {
+            background-color: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            margin-left: 10px;
+            font-size: 16px;
+        }
+        
+        .config-panel {
+            background-color: #fff;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 10px;
+        }
+        
+        .config-input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .error {
+            background-color: #FF3B30;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>Chat IA - iOS 9</h1>
+        </div>
+        
+        <div class="error" id="error-message"></div>
+        
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message">
+                ¡Hola! Configura tu backend URL y API Key abajo.
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <input type="text" id="message-input" placeholder="Primero guarda la configuración..." disabled>
+            <button id="send-button" disabled>Enviar</button>
+        </div>
+    </div>
+    
+    <div class="config-panel">
+        <h3>Configuración</h3>
+        <input type="text" class="config-input" id="backend-url" 
+               placeholder="URL de tu backend (ej: https://tu-backend.onrender.com)">
+        <input type="text" class="config-input" id="api-key" 
+               placeholder="Tu API Key de Gemini o DeepSeek">
+        <button id="save-config" style="padding: 10px 20px; background: #007AFF; color: white; border: none; border-radius: 5px; width: 100%;">Guardar Configuración</button>
+    </div>
+
+    <script>
+        // JavaScript ES5 - VERSIÓN SIMPLIFICADA Y CORREGIDA
+        
+        // Elementos del DOM
+        var chatMessages = document.getElementById('chat-messages');
+        var messageInput = document.getElementById('message-input');
+        var sendButton = document.getElementById('send-button');
+        var errorMessage = document.getElementById('error-message');
+        var backendUrlInput = document.getElementById('backend-url');
+        var apiKeyInput = document.getElementById('api-key');
+        var saveConfigButton = document.getElementById('save-config');
+        
+        // Configuración
+        var config = {
+            backendUrl: '',
+            apiKey: ''
+        };
+        
+        // Mostrar mensaje
+        function showMessage(text, sender) {
+            var messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + (sender === 'user' ? 'user-message' : 'bot-message');
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Mostrar error
+        function showError(text) {
+            errorMessage.textContent = text;
+            errorMessage.style.display = 'block';
+        }
+        
+        // Guardar configuración
+        saveConfigButton.onclick = function() {
+            config.backendUrl = backendUrlInput.value.trim();
+            config.apiKey = apiKeyInput.value.trim();
+            
+            if (config.backendUrl && config.apiKey) {
+                // Guardar en localStorage
+                try {
+                    localStorage.setItem('chatConfig', JSON.stringify(config));
+                    showMessage('✅ Configuración guardada. Ya puedes chatear!', 'bot');
+                    messageInput.disabled = false;
+                    sendButton.disabled = false;
+                    messageInput.placeholder = 'Escribe tu mensaje...';
+                    messageInput.focus();
+                } catch(e) {
+                    showError('Error al guardar: ' + e.message);
+                }
+            } else {
+                showError('❌ Completa ambos campos');
+            }
+        };
+        
+        // Enviar mensaje
+        function sendMessage() {
+            var message = messageInput.value.trim();
+            if (!message) return;
+            
+            showMessage(message, 'user');
+            messageInput.value = '';
+            
+            // Simular respuesta por ahora (luego conectaremos el backend real)
+            setTimeout(function() {
+                showMessage("🔧 Backend no configurado aún. Pronto podré responder!", 'bot');
+            }, 1000);
+        }
+        
+        sendButton.onclick = sendMessage;
+        
+        messageInput.onkeypress = function(e) {
+            if (e.keyCode === 13) {
+                sendMessage();
+            }
+        };
+        
+        // Cargar configuración guardada al iniciar
+        try {
+            var saved = localStorage.getItem('chatConfig');
+            if (saved) {
+                config = JSON.parse(saved);
+                backendUrlInput.value = config.backendUrl;
+                apiKeyInput.value = config.apiKey;
+                if (config.backendUrl && config.apiKey) {
+                    messageInput.disabled = false;
+                    sendButton.disabled = false;
+                    messageInput.placeholder = 'Escribe tu mensaje...';
+                    showMessage('Configuración cargada. Listo para chatear!', 'bot');
+                }
+            }
+        } catch(e) {
+            console.log('No hay configuración guardada');
+        }
+    </script>
+</body>
+</html>
