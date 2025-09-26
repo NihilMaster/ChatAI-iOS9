@@ -1,170 +1,104 @@
-// server.js - Backend compatible con iOS 9
+// server.js - VERSIÓN MEJORADA CON DEBUGGING
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
-// Middleware muy simple para máxima compatibilidad
+// Middleware con más logging
 app.use(express.json({ limit: '10mb' }));
-app.use(cors({
-    origin: '*',
-    methods: ['POST', 'GET'],
-    allowedHeaders: ['Content-Type', 'Accept']
-}));
+app.use(cors({ origin: '*' }));
 
-// Headers compatibles con iOS 9
+// Log todas las requests
 app.use(function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-    res.header('Access-Control-Allow-Methods', 'POST, GET');
+    console.log('📨 Request recibida:', req.method, req.url);
+    console.log('📝 Body:', req.body);
     next();
 });
 
-// Ruta de prueba de salud
+// Headers compatibles
+app.use(function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Accept');
+    res.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    next();
+});
+
+// Manejar OPTIONS para CORS preflight
+app.options('*', function(req, res) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Accept');
+    res.sendStatus(200);
+});
+
+// Ruta de prueba
 app.get('/', function(req, res) {
     res.json({ 
         status: 'OK', 
-        message: 'Backend para iOS 9 funcionando',
-        compatible: true,
+        message: 'Backend funcionando',
         timestamp: new Date().toISOString()
     });
 });
 
-// Ruta de prueba específica para iOS 9
 app.get('/test', function(req, res) {
     res.json({ 
         success: true,
-        message: 'Conexión exitosa desde iOS 9',
-        test: 'Este es un mensaje de prueba'
+        message: 'Test exitoso desde el backend',
+        data: { test: 'funcionando' }
     });
 });
 
-// Ruta principal del chat - Gemini API
+// Ruta SIMPLIFICADA del chat - Solo para testing
 app.post('/chat', async function(req, res) {
     try {
+        console.log('🔍 Chat endpoint llamado');
+        console.log('📦 Body recibido:', req.body);
+        
         var message = req.body.message;
         var apiKey = req.body.apiKey;
 
-        console.log('Mensaje recibido:', message);
-
-        if (!message || !apiKey) {
+        if (!message) {
             return res.json({
                 success: false,
-                error: 'Faltan message o apiKey en la solicitud'
+                error: 'No se recibió mensaje'
             });
         }
 
-        // Integración con Google Gemini API
-        var geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: message
-                    }]
-                }]
-            })
-        });
-
-        if (!geminiResponse.ok) {
-            var errorText = await geminiResponse.text();
-            console.error('Error de Gemini:', errorText);
+        if (!apiKey) {
             return res.json({
                 success: false,
-                error: 'Error en la API de Gemini: ' + geminiResponse.status
+                error: 'No se recibió API key'
             });
         }
 
-        var geminiData = await geminiResponse.json();
+        console.log('🔑 API Key recibida (primeros 10 chars):', apiKey.substring(0, 10) + '...');
+        console.log('💬 Mensaje recibido:', message);
 
-        if (geminiData.candidates && geminiData.candidates[0] && geminiData.candidates[0].content) {
-            var responseText = geminiData.candidates[0].content.parts[0].text;
-            
-            res.json({
-                success: true,
-                message: responseText,
-                timestamp: new Date().toISOString()
-            });
-        } else {
-            res.json({
-                success: false,
-                error: 'Respuesta inesperada de Gemini API',
-                rawResponse: geminiData
-            });
-        }
+        // PRIMERO: Responder con un mensaje de prueba SIN llamar a Gemini
+        var testResponse = {
+            success: true,
+            message: "✅ Backend funcionando. Mensaje recibido: '" + message + "'. Longitud: " + message.length + " caracteres.",
+            debug: {
+                apiKeyLength: apiKey.length,
+                timestamp: new Date().toISOString(),
+                backend: 'Render.com'
+            }
+        };
+
+        console.log('📤 Enviando respuesta:', testResponse);
+        res.json(testResponse);
 
     } catch (error) {
-        console.error('Error en el servidor:', error);
+        console.error('❌ Error en /chat:', error);
         res.json({
             success: false,
-            error: 'Error interno del servidor: ' + error.message
-        });
-    }
-});
-
-// Ruta alternativa para DeepSeek API
-app.post('/chat-deepseek', async function(req, res) {
-    try {
-        var message = req.body.message;
-        var apiKey = req.body.apiKey;
-
-        if (!message || !apiKey) {
-            return res.json({
-                success: false,
-                error: 'Faltan message o apiKey'
-            });
-        }
-
-        // Integración con DeepSeek API
-        var deepseekResponse = await fetch('https://api.deepseek.com/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + apiKey
-            },
-            body: JSON.stringify({
-                model: "deepseek-chat",
-                messages: [{ role: "user", content: message }],
-                stream: false
-            })
-        });
-
-        if (!deepseekResponse.ok) {
-            return res.json({
-                success: false,
-                error: 'Error en DeepSeek API: ' + deepseekResponse.status
-            });
-        }
-
-        var deepseekData = await deepseekResponse.json();
-
-        if (deepseekData.choices && deepseekData.choices[0]) {
-            res.json({
-                success: true,
-                message: deepseekData.choices[0].message.content,
-                timestamp: new Date().toISOString()
-            });
-        } else {
-            res.json({
-                success: false,
-                error: 'Respuesta inesperada de DeepSeek'
-            });
-        }
-
-    } catch (error) {
-        res.json({
-            success: false,
-            error: 'Error con DeepSeek: ' + error.message
+            error: 'Error: ' + error.message
         });
     }
 });
 
 app.listen(PORT, function() {
-    console.log('Servidor backend corriendo en puerto ' + PORT);
-    console.log('URL local: http://localhost:' + PORT);
+    console.log('🚀 Servidor backend corriendo en puerto ' + PORT);
+    console.log('📍 URL: https://chatai-ios9.onrender.com');
 });
