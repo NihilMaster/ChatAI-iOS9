@@ -1,4 +1,4 @@
-// server.js - Backend con parser CORREGIDO
+// server.js - Parser que MANTIENE markdown para iOS 9
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
@@ -10,12 +10,6 @@ const PORT = process.env.PORT || 10000;
 app.use(express.json({ limit: '10mb' }));
 app.use(cors({ origin: '*' }));
 
-// Log de requests
-app.use(function (req, res, next) {
-    console.log('📨 Request recibida:', req.method, req.url);
-    next();
-});
-
 // Headers CORS
 app.use(function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
@@ -24,35 +18,13 @@ app.use(function (req, res, next) {
     next();
 });
 
-// Manejar OPTIONS
 app.options('*', function (req, res) {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Accept');
     res.sendStatus(200);
 });
 
-// Ruta raíz
-app.get('/', function (req, res) {
-    res.json({
-        status: 'OK',
-        message: 'Backend funcionando',
-        timestamp: new Date().toISOString(),
-    });
-});
-
-// Ruta test
-app.get('/test', function (req, res) {
-    res.json({
-        success: true,
-        message: 'Test exitoso desde el backend',
-        data: { test: 'funcionando' },
-    });
-});
-
-// Ruta principal del chat con parser CORREGIDO
+// Ruta principal del chat - Markdown ORIGINAL
 app.post('/chat', async function (req, res) {
     try {
-        console.log('🔍 Chat endpoint llamado');
         var message = req.body.message;
         var apiKey = req.body.apiKey;
 
@@ -62,8 +34,6 @@ app.post('/chat', async function (req, res) {
                 error: 'Faltan message o apiKey',
             });
         }
-
-        console.log('💬 Mensaje recibido:', message);
 
         var geminiResponse = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
@@ -77,52 +47,53 @@ app.post('/chat', async function (req, res) {
                         {
                             parts: [
                                 {
-                                    text: message,
+                                    text: "Por favor, formatea tu respuesta usando markdown simple:\n" + 
+                                          "# para títulos principales\n" +
+                                          "## para subtítulos\n" + 
+                                          "### para secciones\n" +
+                                          "- para listas con **negritas**\n" +
+                                          "Y líneas --- para separadores\n\n" +
+                                          "Pregunta: " + message
                                 },
                             ],
                         },
                     ],
                     generationConfig: {
                         temperature: 0.7,
-                        maxOutputTokens: 1000,
+                        maxOutputTokens: 2000,
                     }
                 }),
             }
         );
 
-        console.log('📡 Status de Gemini:', geminiResponse.status);
-
         if (!geminiResponse.ok) {
             var errorText = await geminiResponse.text();
-            console.error('❌ Error de Gemini:', errorText);
             return res.json({
                 success: false,
-                error: 'Error en la API de Gemini. Código: ' + geminiResponse.status,
+                error: 'Error en la API de Gemini: ' + geminiResponse.status,
             });
         }
 
         var geminiData = await geminiResponse.json();
-        console.log('✅ Respuesta de Gemini recibida');
 
         if (geminiData.candidates && geminiData.candidates[0] && geminiData.candidates[0].content) {
             var rawResponse = geminiData.candidates[0].content.parts[0].text;
-            var formattedResponse = parseMarkdownForIOS9(rawResponse);
             
-            console.log('📤 Enviando respuesta formateada');
+            // LIMPIAR SOLO lo necesario, mantener markdown
+            var cleanedResponse = cleanResponse(rawResponse);
+            
             res.json({
                 success: true,
-                message: formattedResponse,
-                model: 'gemini-2.0-flash',
+                message: cleanedResponse,
                 timestamp: new Date().toISOString(),
             });
         } else {
             res.json({
                 success: false,
-                error: 'La API devolvió una respuesta inesperada',
+                error: 'Respuesta inesperada de la API',
             });
         }
     } catch (error) {
-        console.error('💥 Error en el servidor:', error);
         res.json({
             success: false,
             error: 'Error interno: ' + error.message,
@@ -130,71 +101,33 @@ app.post('/chat', async function (req, res) {
     }
 });
 
-// PARSER CORREGIDO - Sin errores de sintaxis
-function parseMarkdownForIOS9(text) {
+// LIMPIADOR mínimo - Solo asegurar compatibilidad
+function cleanResponse(text) {
     if (!text) return '';
     
-    var parsed = text;
+    var result = text;
     
-    console.log('📝 Parseando texto original:', text.substring(0, 100) + '...');
-    
-    // 1. ENCABEZADOS
-    parsed = parsed.replace(/^# (.*$)/gim, '🟦 **$1**\n────────────────────');
-    parsed = parsed.replace(/^## (.*$)/gim, '🔷 **$1**\n────────────────────');
-    parsed = parsed.replace(/^### (.*$)/gim, '🔹 **$1**\n────────────────────');
-    
-    // 2. LÍNEAS SEPARADORAS
-    parsed = parsed.replace(/^---+/gim, '────────────────────');
-    parsed = parsed.replace(/^___+/gim, '────────────────────');
-    parsed = parsed.replace(/^\*\*\*+/gim, '────────────────────');
-    
-    // 3. LISTAS
-    parsed = parsed.replace(/^\- (.*$)/gim, '• $1');
-    parsed = parsed.replace(/^\* (.*$)/gim, '• $1');
-    parsed = parsed.replace(/^\+ (.*$)/gim, '• $1');
-    
-    // 4. LISTAS NUMERADAS
-    parsed = parsed.replace(/^(\d+)\. (.*$)/gim, '$1. $2');
-    
-    // 5. NEGRITA - CORREGIDO (sin doble pasada)
-    parsed = parsed.replace(/\*\*(.*?)\*\*/g, '**$1**');
-    
-    // 6. CURSIVA - CORREGIDO (error de typo)
-    parsed = parsed.replace(/\*(.*?)\*/g, '_$1_');
-    parsed = parsed.replace(/_(.*?)_/g, '_$1_'); 
-    
-    // 7. CÓDIGO
-    parsed = parsed.replace(/```([^`]+)```/g, '📋 $1');
-    parsed = parsed.replace(/`([^`]+)`/g, '"$1"');
-    
-    // 8. BLOQUES DE CITA
-    parsed = parsed.replace(/^> (.*$)/gim, '│ $1');
-    
-    // 9. ENLACES
-    parsed = parsed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 (🔗 enlace)');
-    
-    // 10. LIMPIAR HTML
-    parsed = parsed.replace(/&amp;/g, '&')
+    // 1. Solo limpiar HTML entities básicas
+    result = result.replace(/&amp;/g, '&')
                   .replace(/&lt;/g, '<')
                   .replace(/&gt;/g, '>')
                   .replace(/&quot;/g, '"')
                   .replace(/&#39;/g, "'");
     
-    // 11. NORMALIZAR SALTOS DE LÍNEA
-    parsed = parsed.replace(/\n\s*\n\s*\n/g, '\n\n');
-    parsed = parsed.replace(/\r\n/g, '\n');
+    // 2. Normalizar saltos de línea (importante para iOS 9)
+    result = result.replace(/\r\n/g, '\n');
+    result = result.replace(/\n\s*\n\s*\n/g, '\n\n');
     
-    // 12. LIMITAR LONGITUD
-    if (parsed.length > 3000) {
-        parsed = parsed.substring(0, 3000) + '\n\n...[mensaje truncado]';
-    }
-    
-    console.log('✅ Texto parseado correctamente');
-    return parsed;
+    return result;
 }
 
-// Iniciar servidor
+app.get('/test', function (req, res) {
+    res.json({
+        success: true,
+        message: '# Título de Prueba\n\nEste es un **texto en negrita** y _cursiva_.\n\n## Subtítulo\n\n- Item 1\n- Item 2\n\n---\n\nFin del mensaje.',
+    });
+});
+
 app.listen(PORT, function () {
-    console.log('🚀 Servidor backend corriendo en puerto ' + PORT);
-    console.log('📍 URL: https://chatai-ios9.onrender.com');
+    console.log('🚀 Servidor backend corriendo - Markdown original');
 });

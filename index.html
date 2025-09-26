@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat IA - iOS 9</title>
     <style>
-        /* CSS MEJORADO para formato de texto */
         body {
             font-family: Helvetica, Arial, sans-serif;
             background-color: #f0f0f0;
@@ -44,9 +43,8 @@
             margin-bottom: 15px;
             padding: 12px;
             border-radius: 10px;
-            max-width: 85%;
+            max-width: 90%;
             word-wrap: break-word;
-            line-height: 1.4;
         }
         
         .user-message {
@@ -61,21 +59,19 @@
             color: #333;
             margin-right: auto;
             border: 1px solid #E9ECEF;
-            white-space: pre-wrap; /* IMPORTANTE: Respeta saltos de línea */
+            white-space: pre-wrap;
             word-wrap: break-word;
             font-size: 15px;
+            line-height: 1.6;
         }
         
-        /* Estilos para formato mejorado en mensajes del bot */
-        .bot-message strong {
-            font-weight: bold;
-            color: #0056b3;
+        /* ESTILOS PARA MARKDOWN en iOS 9 */
+        .bot-message {
+            font-family: Helvetica, Arial, sans-serif;
         }
         
-        .bot-message em {
-            font-style: italic;
-            color: #666;
-        }
+        /* Los encabezados se verán por el formato de markdown */
+        /* El usuario verá exactamente lo que envía Gemini */
         
         .chat-input-container {
             padding: 15px;
@@ -90,7 +86,6 @@
             border: 1px solid #ddd;
             border-radius: 20px;
             font-size: 16px;
-            outline: none;
         }
         
         #send-button {
@@ -101,12 +96,6 @@
             padding: 12px 20px;
             margin-left: 10px;
             font-size: 16px;
-            cursor: pointer;
-        }
-        
-        #send-button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
         }
         
         .config-panel {
@@ -114,7 +103,6 @@
             padding: 15px;
             margin-top: 10px;
             border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
         .config-input {
@@ -134,7 +122,6 @@
             border-radius: 5px;
             width: 100%;
             font-size: 16px;
-            cursor: pointer;
             margin-top: 5px;
         }
         
@@ -145,64 +132,52 @@
             border-radius: 5px;
             margin: 10px 0;
             display: none;
-            text-align: center;
-        }
-        
-        .success {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 5px 0;
-            display: none;
-            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <h1>💬 Chat IA - iOS 9</h1>
+            <h1>💬 Chat IA - Markdown</h1>
         </div>
         
         <div class="error" id="error-message"></div>
-        <div class="success" id="success-message"></div>
         
         <div class="chat-messages" id="chat-messages">
             <div class="message bot-message">
-                ¡Hola! 👋 Configura tu backend URL y API Key abajo.
+                ¡Hola! Los mensajes ahora mantienen formato markdown:
                 
-                Ejemplo de formato:
-                🟦 **Título Principal**
-                ────────────────────
-                • Lista con puntos
-                • _Texto en cursiva_
-                • **Texto en negrita**
+                # Título Grande
+                ## Subtítulo  
+                ### Sección
+                - Lista con **negritas**
+                ---
+                
+                Configura tu backend URL y API Key abajo.
             </div>
         </div>
         
         <div class="chat-input-container">
-            <input type="text" id="message-input" placeholder="Primero guarda la configuración..." disabled>
-            <button id="send-button" disabled>📤 Enviar</button>
+            <input type="text" id="message-input" placeholder="Configura primero..." disabled>
+            <button id="send-button" disabled>Enviar</button>
         </div>
     </div>
     
     <div class="config-panel">
         <h3>⚙️ Configuración</h3>
         <input type="text" class="config-input" id="backend-url" 
-               placeholder="URL backend: https://chatai-ios9.onrender.com">
+               placeholder="URL: https://chatai-ios9.onrender.com">
         <input type="text" class="config-input" id="api-key" 
                placeholder="API Key de Gemini">
-        <button id="save-config">💾 Guardar Configuración</button>
+        <button id="save-config">Guardar Configuración</button>
     </div>
 
     <script>
-        // JavaScript ES5 - Compatible con iOS 9
+        // JavaScript ES5
         var chatMessages = document.getElementById('chat-messages');
         var messageInput = document.getElementById('message-input');
         var sendButton = document.getElementById('send-button');
         var errorMessage = document.getElementById('error-message');
-        var successMessage = document.getElementById('success-message');
         var backendUrlInput = document.getElementById('backend-url');
         var apiKeyInput = document.getElementById('api-key');
         var saveConfigButton = document.getElementById('save-config');
@@ -228,14 +203,6 @@
             }, 5000);
         }
         
-        function showSuccess(text) {
-            successMessage.textContent = text;
-            successMessage.style.display = 'block';
-            setTimeout(function() {
-                successMessage.style.display = 'none';
-            }, 3000);
-        }
-        
         saveConfigButton.onclick = function() {
             config.backendUrl = backendUrlInput.value.trim().replace(/\/$/, '');
             config.apiKey = apiKeyInput.value.trim();
@@ -243,17 +210,16 @@
             if (config.backendUrl && config.apiKey) {
                 try {
                     localStorage.setItem('chatConfig', JSON.stringify(config));
-                    showSuccess('✅ Configuración guardada correctamente');
                     messageInput.disabled = false;
                     sendButton.disabled = false;
                     messageInput.placeholder = 'Escribe tu mensaje...';
                     messageInput.focus();
-                    showMessage('✅ Configuración guardada. ¡Ya puedes chatear con la IA!', 'bot');
+                    showMessage('✅ Configuración guardada. ¡Ya puedes chatear!', 'bot');
                 } catch(e) {
-                    showError('Error al guardar: ' + e.message);
+                    showError('Error al guardar');
                 }
             } else {
-                showError('❌ Completa ambos campos');
+                showError('Completa ambos campos');
             }
         };
         
@@ -265,9 +231,7 @@
             messageInput.value = '';
             sendButton.disabled = true;
             
-            var baseUrl = config.backendUrl.replace(/\/$/, '');
-            var url = baseUrl + '/chat';
-            
+            var url = config.backendUrl.replace(/\/$/, '') + '/chat';
             var xhr = new XMLHttpRequest();
             xhr.open('POST', url, true);
             xhr.setRequestHeader('Content-Type', 'application/json');
@@ -275,7 +239,6 @@
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
                     sendButton.disabled = false;
-                    
                     if (xhr.status === 200) {
                         try {
                             var response = JSON.parse(xhr.responseText);
@@ -298,23 +261,18 @@
                 showError('Error de conexión');
             };
             
-            var requestData = {
+            xhr.send(JSON.stringify({
                 message: message,
                 apiKey: config.apiKey
-            };
-            
-            xhr.send(JSON.stringify(requestData));
+            }));
         }
         
         sendButton.onclick = sendMessage;
-        
         messageInput.onkeypress = function(e) {
-            if (e.keyCode === 13) {
-                sendMessage();
-            }
+            if (e.keyCode === 13) sendMessage();
         };
         
-        // Cargar configuración al iniciar
+        // Cargar configuración
         try {
             var saved = localStorage.getItem('chatConfig');
             if (saved) {
@@ -325,12 +283,9 @@
                     messageInput.disabled = false;
                     sendButton.disabled = false;
                     messageInput.placeholder = 'Escribe tu mensaje...';
-                    showMessage('✅ Configuración cargada. Listo para chatear!', 'bot');
                 }
             }
-        } catch(e) {
-            console.log('No hay configuración guardada');
-        }
+        } catch(e) {}
     </script>
 </body>
 </html>
