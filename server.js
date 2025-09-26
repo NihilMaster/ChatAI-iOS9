@@ -1,4 +1,4 @@
-// server.js 
+// server.js - Backend con parser mejorado para iOS 9
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
@@ -13,7 +13,6 @@ app.use(cors({ origin: '*' }));
 // Log de requests
 app.use(function (req, res, next) {
     console.log('📨 Request recibida:', req.method, req.url);
-    console.log('📝 Body:', req.body);
     next();
 });
 
@@ -50,7 +49,7 @@ app.get('/test', function (req, res) {
     });
 });
 
-// Ruta principal del chat - SOLO Gemini 2.0 Flash
+// Ruta principal del chat con parser mejorado
 app.post('/chat', async function (req, res) {
     try {
         console.log('🔍 Chat endpoint llamado');
@@ -64,10 +63,8 @@ app.post('/chat', async function (req, res) {
             });
         }
 
-        console.log('🔑 API Key recibida');
         console.log('💬 Mensaje recibido:', message);
 
-        // ÚNICO ENDPOINT Y MODELO - GEMINI 2.0 FLASH
         var geminiResponse = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
             {
@@ -85,6 +82,10 @@ app.post('/chat', async function (req, res) {
                             ],
                         },
                     ],
+                    generationConfig: {
+                        temperature: 0.7,
+                        maxOutputTokens: 1000,
+                    }
                 }),
             }
         );
@@ -94,52 +95,105 @@ app.post('/chat', async function (req, res) {
         if (!geminiResponse.ok) {
             var errorText = await geminiResponse.text();
             console.error('❌ Error de Gemini:', errorText);
-
             return res.json({
                 success: false,
-                error: 'Error en la API de Gemini',
-                status: geminiResponse.status,
-                raw: errorText,
+                error: 'Error en la API de Gemini. Código: ' + geminiResponse.status,
             });
         }
 
         var geminiData = await geminiResponse.json();
         console.log('✅ Respuesta de Gemini recibida');
 
-        if (
-            geminiData.candidates &&
-            geminiData.candidates[0] &&
-            geminiData.candidates[0].content
-        ) {
-            var responseText =
-                geminiData.candidates[0].content.parts[0].text;
-
-            console.log('📤 Enviando respuesta al cliente');
+        if (geminiData.candidates && geminiData.candidates[0] && geminiData.candidates[0].content) {
+            var rawResponse = geminiData.candidates[0].content.parts[0].text;
+            var formattedResponse = parseMarkdownForIOS9(rawResponse);
+            
+            console.log('📤 Enviando respuesta formateada');
             res.json({
                 success: true,
-                message: responseText,
+                message: formattedResponse,
                 model: 'gemini-2.0-flash',
                 timestamp: new Date().toISOString(),
             });
         } else {
-            console.warn('⚠️ Respuesta inesperada de Gemini');
             res.json({
                 success: false,
-                error: 'Respuesta inesperada de la API',
-                rawResponse: geminiData,
+                error: 'La API devolvió una respuesta inesperada',
             });
         }
     } catch (error) {
         console.error('💥 Error en el servidor:', error);
         res.json({
             success: false,
-            error: 'Error: ' + error.message,
+            error: 'Error interno: ' + error.message,
         });
     }
 });
+
+// PARSER MEJORADO para iOS 9 con formato visual
+function parseMarkdownForIOS9(text) {
+    if (!text) return '';
+    
+    var parsed = text;
+    
+    // 1. ENCABEZADOS - Convertir a formato visual con emojis y mayúsculas
+    parsed = parsed.replace(/^# (.*$)/gim, '🟦 **$1**\n────────────────────');
+    parsed = parsed.replace(/^## (.*$)/gim, '🔷 **$1**\n────────────────────');
+    parsed = parsed.replace(/^### (.*$)/gim, '🔹 **$1**\n────────────────────');
+    
+    // 2. LÍNEAS SEPARADORAS - Mejorar visualmente
+    parsed = parsed.replace(/^---+/gim, '────────────────────');
+    parsed = parsed.replace(/^___+/gim, '────────────────────');
+    parsed = parsed.replace(/^\*\*\*+/gim, '────────────────────');
+    
+    // 3. LISTAS - Mejorar con emojis
+    parsed = parsed.replace(/^\- (.*$)/gim, '• $1');
+    parsed = parsed.replace(/^\* (.*$)/gim, '• $1');
+    parsed = parsed.replace(/^\+ (.*$)/gim, '• $1');
+    
+    // 4. LISTAS NUMERADAS - Mantener números pero mejorar
+    parsed = parsed.replace(/^(\d+)\. (.*$)/gim, '$1. $2');
+    
+    // 5. NEGRITA - Mantener pero asegurar espacios
+    parsed = parsed.replace(/\*\*(.*?)\*\*/g, '**$1**');
+    parsed = parsed.replace(/\*\*(.*?)\*\*/g, '**$1**'); // Doble pasada para casos anidados
+    
+    // 6. CURSIVA - Convertir a formato compatible
+    parsed = parsed.replace(/\*(.*?)\*/g, '_$1_');
+    parsed = parsed(/_(.*?)_/g, '_$1_');
+    
+    // 7. CÓDIGO Y BLOQUES - Simplificar
+    parsed = parsed.replace(/```([^`]+)```/g, '📋 $1');
+    parsed = parsed.replace(/`([^`]+)`/g, '"$1"');
+    
+    // 8. BLOQUES DE CITA - Mejorar visualmente
+    parsed = parsed.replace(/^> (.*$)/gim, '│ $1');
+    
+    // 9. ENLACES - Simplificar
+    parsed = parsed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 (🔗 enlace)');
+    
+    // 10. LIMPIAR HTML
+    parsed = parsed.replace(/&amp;/g, '&')
+                  .replace(/&lt;/g, '<')
+                  .replace(/&gt;/g, '>')
+                  .replace(/&quot;/g, '"')
+                  .replace(/&#39;/g, "'");
+    
+    // 11. NORMALIZAR SALTOS DE LÍNEA
+    parsed = parsed.replace(/\n\s*\n\s*\n/g, '\n\n');
+    parsed = parsed.replace(/\r\n/g, '\n');
+    
+    // 12. LIMITAR LONGITUD
+    if (parsed.length > 3000) {
+        parsed = parsed.substring(0, 3000) + '\n\n...[mensaje truncado]';
+    }
+    
+    return parsed;
+}
 
 // Iniciar servidor
 app.listen(PORT, function () {
     console.log('🚀 Servidor backend corriendo en puerto ' + PORT);
     console.log('📍 URL: https://chatai-ios9.onrender.com');
+    console.log('✅ Parser de markdown activado para iOS 9');
 });
