@@ -1,4 +1,4 @@
-// server.js - Backend con parser mejorado para iOS 9
+// server.js - Backend con parser CORREGIDO
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
@@ -49,7 +49,7 @@ app.get('/test', function (req, res) {
     });
 });
 
-// Ruta principal del chat con parser mejorado
+// Ruta principal del chat con parser CORREGIDO
 app.post('/chat', async function (req, res) {
     try {
         console.log('🔍 Chat endpoint llamado');
@@ -130,46 +130,47 @@ app.post('/chat', async function (req, res) {
     }
 });
 
-// PARSER MEJORADO para iOS 9 con formato visual
+// PARSER CORREGIDO - Sin errores de sintaxis
 function parseMarkdownForIOS9(text) {
     if (!text) return '';
     
     var parsed = text;
     
-    // 1. ENCABEZADOS - Convertir a formato visual con emojis y mayúsculas
+    console.log('📝 Parseando texto original:', text.substring(0, 100) + '...');
+    
+    // 1. ENCABEZADOS
     parsed = parsed.replace(/^# (.*$)/gim, '🟦 **$1**\n────────────────────');
     parsed = parsed.replace(/^## (.*$)/gim, '🔷 **$1**\n────────────────────');
     parsed = parsed.replace(/^### (.*$)/gim, '🔹 **$1**\n────────────────────');
     
-    // 2. LÍNEAS SEPARADORAS - Mejorar visualmente
+    // 2. LÍNEAS SEPARADORAS
     parsed = parsed.replace(/^---+/gim, '────────────────────');
     parsed = parsed.replace(/^___+/gim, '────────────────────');
     parsed = parsed.replace(/^\*\*\*+/gim, '────────────────────');
     
-    // 3. LISTAS - Mejorar con emojis
+    // 3. LISTAS
     parsed = parsed.replace(/^\- (.*$)/gim, '• $1');
     parsed = parsed.replace(/^\* (.*$)/gim, '• $1');
     parsed = parsed.replace(/^\+ (.*$)/gim, '• $1');
     
-    // 4. LISTAS NUMERADAS - Mantener números pero mejorar
+    // 4. LISTAS NUMERADAS
     parsed = parsed.replace(/^(\d+)\. (.*$)/gim, '$1. $2');
     
-    // 5. NEGRITA - Mantener pero asegurar espacios
+    // 5. NEGRITA - CORREGIDO (sin doble pasada)
     parsed = parsed.replace(/\*\*(.*?)\*\*/g, '**$1**');
-    parsed = parsed.replace(/\*\*(.*?)\*\*/g, '**$1**'); // Doble pasada para casos anidados
     
-    // 6. CURSIVA - Convertir a formato compatible
+    // 6. CURSIVA - CORREGIDO (error de typo)
     parsed = parsed.replace(/\*(.*?)\*/g, '_$1_');
-    parsed = parsed(/_(.*?)_/g, '_$1_');
+    parsed = parsed.replace(/_(.*?)_/g, '_$1_'); 
     
-    // 7. CÓDIGO Y BLOQUES - Simplificar
+    // 7. CÓDIGO
     parsed = parsed.replace(/```([^`]+)```/g, '📋 $1');
     parsed = parsed.replace(/`([^`]+)`/g, '"$1"');
     
-    // 8. BLOQUES DE CITA - Mejorar visualmente
+    // 8. BLOQUES DE CITA
     parsed = parsed.replace(/^> (.*$)/gim, '│ $1');
     
-    // 9. ENLACES - Simplificar
+    // 9. ENLACES
     parsed = parsed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 (🔗 enlace)');
     
     // 10. LIMPIAR HTML
@@ -188,6 +189,7 @@ function parseMarkdownForIOS9(text) {
         parsed = parsed.substring(0, 3000) + '\n\n...[mensaje truncado]';
     }
     
+    console.log('✅ Texto parseado correctamente');
     return parsed;
 }
 
@@ -195,5 +197,4 @@ function parseMarkdownForIOS9(text) {
 app.listen(PORT, function () {
     console.log('🚀 Servidor backend corriendo en puerto ' + PORT);
     console.log('📍 URL: https://chatai-ios9.onrender.com');
-    console.log('✅ Parser de markdown activado para iOS 9');
 });
