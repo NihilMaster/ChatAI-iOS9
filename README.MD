@@ -1,10 +1,10 @@
 # Chat AI for iOS 9.3.6+ 🚀
 
-A web application specifically designed for legacy Apple devices (iPad, iPhone) running **iOS 9.3.6 or earlier versions**, enabling interaction with modern AI through APIs like Google Gemini.
+A web application specifically designed as a workaround to Apple’s planned obsolescence, enabling legacy devices (iPad, iPhone) running **iOS 9.3.6 or later** to interact with modern AI through APIs like Google Gemini.
 
 ## ✨ Features
 
-- **Full compatibility** with iOS 9.3.6 and earlier versions
+- **Full compatibility** with iOS 9.3.6 and later versions
 - **Web interface optimized** for legacy Safari
 - **Google Gemini integration** using API key
 - **Compatible web technologies**: HTML5, CSS3, ES5
@@ -122,7 +122,7 @@ Contributions are welcome! Please consider:
 
 ---
 
-**Tested on iOS 9.3.6 - Your device version may vary**  
+**Tested on iPad3 | iOS 9.3.6 - Your device version may vary**  
 Please report your experience in the Issues section to help expand compatibility! 🎉
 
-*Last updated: 2024 - Optimized for iOS 9.3.6 and earlier versions*
+*Last updated: 2025 - Optimized for iOS 9.3.6 and earlier versions*
