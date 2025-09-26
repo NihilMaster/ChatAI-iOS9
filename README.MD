@@ -42,7 +42,7 @@ Use the `tested-on` label in the Issues tab to indicate the specific OS, device,
 
 ## 📋 Prerequisites
 
-1. **iOS 9.3.6 or earlier device** (iPad, iPhone, iPod Touch)
+1. **iOS 9.3.6 or later device** (iPad, iPhone, iPod Touch)
 2. **Internet connection** with TLS 1.2 support
 3. **Google Gemini API Key** (free from Google AI Studio)
 4. **Safari browser** (included in iOS 9)
@@ -125,4 +125,4 @@ Contributions are welcome! Please consider:
 **Tested on iPad3 | iOS 9.3.6 - Your device version may vary**  
 Please report your experience in the Issues section to help expand compatibility! 🎉
 
-*Last updated: 2025 - Optimized for iOS 9.3.6 and earlier versions*
+*Last updated: 2025 - Optimized for iOS 9.3.6 and later versions*
