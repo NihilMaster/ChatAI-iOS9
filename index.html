@@ -133,12 +133,49 @@
             margin: 10px 0;
             display: none;
         }
+
+        body {
+        background-color: #ffffff;
+        color: #000000;
+        transition: background-color 0.3s, color 0.3s;
+        }
+
+        
+        .chat-container {
+        background-color: #ffffff; 
+        color: #000000;
+        transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Dark mode */
+        body.dark-mode {
+        background-color: #121212;
+        color: #f1f1f1;
+        }
+
+        
+        body.dark-mode .chat-container {
+        background-color: #1e1e1e; 
+        color: #f1f1f1;          
+        }
+
+        .config-panel {
+        background-color: #ffffff;
+        color: #000000;
+        transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.dark-mode .config-panel {
+        background-color: #1e1e1e; 
+        color: #f1f1f1;          
+        }
     </style>
 </head>
 <body>
     <div class="chat-container">
         <div class="chat-header">
             <h1>💬 Chat IA - Markdown</h1>
+            <button id="theme-toggle"> Dark Mode</button>
         </div>
         
         <div class="error" id="error-message"></div>
@@ -286,6 +323,13 @@
                 }
             }
         } catch(e) {}
+
+         const toggleBtn = document.getElementById('theme-toggle');
+
+        toggleBtn.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        });
+        
     </script>
 </body>
 </html>
